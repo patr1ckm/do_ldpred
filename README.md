@@ -7,12 +7,13 @@ Installation: just copy the scripts and use them.
 Requires all of the LDPred requirements (e.g. hdf5, plinkio, etc).
 
 Expects a directory structure like the following:
-├── 0_ma
-├── 1_genetic
-├── 2_ssf
-├── 3_coord
-├── 4_pred
-├── 5_scores
+
+ - ├── 0_ma
+ - ├── 1_genetic
+ - ├── 2_ssf
+ - ├── 3_coord
+ - ├── 4_pred
+ - ├── 5_scores
 
 Where 0_ma contains the meta-analysis results/summary statistics, 1\_genetic contains plink files (bed/bim/fam) (up to 2 right now). Currently, files in 2 or 3 can be large, 
 and are managed by do\_ldpred. do\_ldpred does not recompute files that already exist in these directories.
