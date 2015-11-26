@@ -5,6 +5,7 @@ set -u
 # Do all ldpred steps 1 phenotype at a time, saving only the weights and not the intermediate results.
 # The reason we do this is because the intermediate results are much too large to save permanently, but the weights
 # are relatively small.
+# This version maps genetic files onto task ids
 
 # The script allows cleaning (removing intermediate results) as well as testing (not running commands, making sure files are ok)
 # by setting the testing and clean flags respectively. Eventually these will be arguments.
@@ -15,41 +16,47 @@ set -u
 #$ -pe smp 10  #Specify parallel environment and legal core size
 #$ -q *@@daccss		 # Specify queue
 #$ -N ldp	         # Specify job name
-#$ -t 1        # number of chunks
+#$ -t 1-2        # number of chunks
 #$ -o SGE_Output/
 
 mname=$1
 echo "running ldpred for $1"
 loc=../3_subsets
-g1=$(echo "$loc/1_genetic/MRG7_2MZ_CIQC_RS_PM")
-g2=$(echo "$loc/1_genetic/mrg7_imp_hap2_rs")
-ns=config/ns.txt
+# This is so gfiles is 1-indexed, to map onto SGE_TASK_ID
+gfiles=("" $(awk -F, 'NR > 1 {print $1}' config))
+echo "read the following genetic files: ${gfiles[@]}"
+ns=ns.txt
 ld_pref=$mname
-ld_rad1=300
-ld_rad2=800
+ld_rad=(300 800)
 # if testing=true, commands are printed but not executed. Useful for checking filenames.
-testing=false
+testing=true
 # remove intermediate results?
 clean=false
 
+# Check if $SGE_TASK_ID is set. If not, just set $i=1. This can be changed to $2 for example.
+if [ -z $SGE_TASK_ID ]; then
+ echo "SGE_TASK_ID= $SGE_TASK_ID"	
+ gf=${gfiles[$SGE_TASK_ID]}
+ ld_rad1=${ld_rad[$SGE_TASK_ID]}
+ i=$SGE_TASK_ID
+else
+ gf=${gfiles[1]}
+ ld_rad1=${ld_rad[1]}
+ i=1
+fi
+
 echo "cleaning = $clean, testing = $testing"
+echo "running script using $gf"
 
 ## 2. Clean data, add c-bp
 f=$loc/0_ma/dropntr/"$mname".tbl
-ssfname1=$(echo "$loc/2_ssf/g1/"$mname".ssf")
-ssfname2=$(echo "$loc/2_ssf/g2/"$mname".ssf")
+ssfname1=$(echo "$loc/2_ssf/g$i/"$mname".ssf")
 
-echo "cleaning raw ma $f, adding c-bp from  $g1"
+echo "cleaning raw ma $f, adding c-bp from  $gf"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then 
-  Rscript clean.R $f $g1 $ssfname1
-  echo "cleaned, files written to 2_ssf/g1"
+  Rscript clean.R $f $ $ssfname1
+  echo "cleaned, files written to 2_ssf/g$i"
 fi
-echo "cleaning raw ma $f, adding c-bp from $g2"
-if [[ "$testing" = false ]] && [[ ! -f $ssfname2 ]]; then 
- Rscript clean.R $f $g2 $ssfname2
- echo "cleaned, files written to 2_ssf/g2"
-fi
-
 
 n=$(grep ^$mname ns.txt | awk '{print $2}' )
 
@@ -58,39 +65,27 @@ module load python/2.7.8
 python test.py
 
 
-cname1=$(echo "$loc/3_coord/g1/$mname.coord")
-cname2=$(echo "$loc/3_coord/g2/$mname.coord")
+cname1=$(echo "$loc/3_coord/g$i/$mname.coord")
 
-echo "coordinating genotypes with --gf=$g1, --ssf=$ssfname1, --N=$n, --out=$cname1 --ssf_format=STANDARD"
+echo "coordinating genotypes with --gf=$gf, --ssf=$ssfname1, --N=$n, --out=$cname1 --ssf_format=STANDARD"
 if [[ "$testing" = false ]] && [[ ! -f $cname1 ]]; then 
-  python ~/bin/ldpred/coord_genotypes.py --gf=$g1 --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD 
+  python ~/bin/ldpred/coord_genotypes.py --gf=$gf --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD 
   echo "results written to $cname1"
 fi
-echo "coordinating genotypes with --gf=$g2, --ssf=$ssfname1, --N=$n, --out=$cname2 --ssf_format=STANDARD"
-if [[ "$testing" = false ]] && [[ ! -f $cname2 ]]; then 
-  python ~/bin/ldpred/coord_genotypes.py --gf=$g2 --ssf=$ssfname2 --N=$n --out=$cname2 --ssf_format=STANDARD 
- echo "results written to $cname2"
-fi
-
 
 ## 4. LDpred
 
-lname1=$(echo "$loc/4_pred/g1/$mname/$mname")
-lname2=$(echo "$loc/4_pred/g2/$mname/$mname")
+lname1=$(echo "$loc/4_pred/g$i/$mname/$mname")
 
-if mkdir $loc/4_pred/g1/$mname; then
- echo "mkdir $loc/4_pred/g1/$mname"
+if mkdir $loc/4_pred/g$i/$mname; then
+ echo "mkdir $loc/4_pred/g$i/$mname"
 fi
 
-if mkdir $loc/4_pred/g2/$mname; then
- echo "mkdir $loc/4_pred/g2/$mname"
-fi
+nweights=$( ls $loc/4_pred/g$i/$mname/ | wc -l )
 
-nweights=$( ls $loc/4_pred/g1/$mname/ | wc -l )
-
-echo "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g1/$ld_pref"
+echo "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/$gf/$ld_pref"
 if [[ "$testing" = false ]] && (( $nweights == 0 )); then 
- python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g1/$ld_pref
+ python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref
  echo "results written to $lname1"
 fi
 
@@ -99,31 +94,16 @@ if [[ "$testing" = false ]] && [[ $clean = true ]]; then
   rm $cname1
 fi
 
-nweights=$(ls $loc/4_pred/g2/$mname/ | wc -l)
-echo "python ~/bin/ldpred/LDpred.py --coord=$cname2 --ld_radius=$ld_rad2 --N=$n --out=$lname2 --ld_prefix=$loc/4_pred/g2/$ld_pref"
-
-if [[ "$testing" = false ]] && (( $nweights == 0 )); then 
- python ~/bin/ldpred/LDpred.py --coord=$cname2 --ld_radius=$ld_rad2 --N=$n --out=$lname2 --ld_prefix=$loc/4_pred/g2/$ld_pref
- echo "results written to $lname2"
-fi
-
-if [[ "$testing" = false ]] && [[ $clean = true ]] ; then 
-  echo " rm $cname2"
-  rm $cname2
-fi
-
-which plink2
-
 ## 5. Compute scores
 echo " computing polygenic scores from ldpred weights"
 
 
-echo "computing .raw files for $loc/4_pred/g1/$mname/"
-nraw=$(ls $loc/4_pred/g1/$mname/*.raw | wc -l)
-nscore=$(ls $loc/5_pred/g1/$mname/ | wc -l)
+echo "computing .raw files for $loc/4_pred/g$i/$mname/"
+nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
+nscore=$(ls $loc/5_pred/g$i/$mname/ | wc -l)
 
 if [[ "$testing" = false ]] && (( $nraw == 0 )); then
- wfiles=$(echo $loc/4_pred/g1/$mname/*.txt)
+ wfiles=$(echo $loc/4_pred/g$i/$mname/*.txt)
  for wf in $wfiles
  do
    rawname=${wf%.txt}
@@ -134,40 +114,14 @@ if [[ "$testing" = false ]] && (( $nraw == 0 )); then
 fi
 
 if [[ "$testing" = false ]] && (( $nscore == 0 )); then
- rfiles=$(echo $loc/4_pred/g1/$mname/*.raw)
+ rfiles=$(echo $loc/4_pred/g$i/$mname/*.raw)
  for rf in $rfiles
  do
    scorename=${rf/4_pred/5_scores}
    scorename=${scorename%.raw}
-   echo "plink2 --bfile $g1 --score $rf --out $scorename --noweb"
-   plink2 --bfile $g1 --score $rf --out $scorename --noweb
+   echo "plink2 --bfile $gf --score $rf --out $scorename --noweb"
+   plink2 --bfile $gf --score $rf --out $scorename --noweb
  done
 fi
 
-echo "computing .raw files for $loc/4_pred/g2/$mname/"
-
-nraw=$(ls $loc/4_pred/g2/$mname/*.raw | wc -l)
-nscore=$(ls $loc/5_pred/g2/$mname/ | wc -l)
-
-if [[ "$testing" = false ]] && (( $nraw == 0 )); then
- wfiles=$(echo $loc/4_pred/g2/$mname/*.txt)
- for wf in $wfiles
- do
-   rawname=${wf%.txt}
-   echo "writing $wf > $rawname.raw"
-   awk '{print $3 "\t" $4 "\t" $6}' $wf > $rawname.raw
- done
- awk '{print $3 "\t" $4 "\t" $5}' $mname_LDpred-inf.txt > $mname_orig.txt
-fi
- 
-if [[ "$testing" = false ]] && (( $nscore == 0 )); then
- rfiles=$(echo $loc/4_pred/g2/$mname/*.raw)
- for rf in $rfiles
- do
-   scorename=${rf/4_pred/5_scores}
-   scorename=${scorename%.raw}
-   echo "plink2 --bfile $g2 --score $rf --out $scorename --noweb"
-   plink2 --bfile $g2 --score $rf --out $scorename --noweb
- done
-fi
 
