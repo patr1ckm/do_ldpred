@@ -1,6 +1,5 @@
 #!/bin/bash
 set -u
-
 # Patrick Miller
 # Do all ldpred steps 1 phenotype at a time, saving only the weights and not the intermediate results.
 # The reason we do this is because the intermediate results are much too large to save permanently, but the weights
@@ -19,31 +18,27 @@ set -u
 #$ -t 1-2        # number of chunks
 #$ -o SGE_Output/
 
+
+module load python/2.7.8
+
 mname=$1
 echo "running ldpred for $1"
 loc=../3_subsets
 # This is so gfiles is 1-indexed, to map onto SGE_TASK_ID
 gfiles=("" $(awk -F, 'NR > 1 {print $1}' config))
 echo "read the following genetic files: ${gfiles[@]}"
-ns=ns.txt
 ld_pref=$mname
 ld_rad=(300 800)
 # if testing=true, commands are printed but not executed. Useful for checking filenames.
-testing=true
+testing=false
 # remove intermediate results?
 clean=false
 
-# Check if $SGE_TASK_ID is set. If not, just set $i=1. This can be changed to $2 for example.
-if [ -z $SGE_TASK_ID ]; then
- echo "SGE_TASK_ID= $SGE_TASK_ID"	
- gf=${gfiles[$SGE_TASK_ID]}
- ld_rad1=${ld_rad[$SGE_TASK_ID]}
- i=$SGE_TASK_ID
-else
- gf=${gfiles[1]}
- ld_rad1=${ld_rad[1]}
- i=1
-fi
+# Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
+arg2=${2:-1}
+i=${SGE_TASK_ID:=$arg2}
+gf=$loc/1_genetic/${gfiles[$i]}
+ld_rad1=${ld_rad[$i]}
 
 echo "cleaning = $clean, testing = $testing"
 echo "running script using $gf"
@@ -61,7 +56,6 @@ fi
 n=$(grep ^$mname ns.txt | awk '{print $2}' )
 
 ## 3. Coordinate
-module load python/2.7.8
 python test.py
 
 
@@ -98,11 +92,11 @@ fi
 echo " computing polygenic scores from ldpred weights"
 
 
-echo "computing .raw files for $loc/4_pred/g$i/$mname/"
 nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
-nscore=$(ls $loc/5_pred/g$i/$mname/ | wc -l)
+nscore=$(ls $loc/5_scores/g$i/$mname/ | wc -l)
 
 if [[ "$testing" = false ]] && (( $nraw == 0 )); then
+ echo "computing .raw files for $loc/4_pred/g$i/$mname/"
  wfiles=$(echo $loc/4_pred/g$i/$mname/*.txt)
  for wf in $wfiles
  do
@@ -114,13 +108,14 @@ if [[ "$testing" = false ]] && (( $nraw == 0 )); then
 fi
 
 if [[ "$testing" = false ]] && (( $nscore == 0 )); then
+ echo "computing polygenic scores"
  rfiles=$(echo $loc/4_pred/g$i/$mname/*.raw)
  for rf in $rfiles
  do
    scorename=${rf/4_pred/5_scores}
    scorename=${scorename%.raw}
-   echo "plink2 --bfile $gf --score $rf --out $scorename --noweb"
-   plink2 --bfile $gf --score $rf --out $scorename --noweb
+   echo "plink2 --bfile $gf --score $rf --out $scorename "
+   plink2 --bfile $gf --score $rf --out $scorename 
  done
 fi
 
