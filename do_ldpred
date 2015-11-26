@@ -41,12 +41,12 @@ ssfname2=$(echo "$loc/2_ssf/g2/"$mname".ssf")
 
 echo "cleaning raw ma $f, adding c-bp from  $g1"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then 
-  Rscript 2_clean.R $f $g1 $ssfname1
+  Rscript clean.R $f $g1 $ssfname1
   echo "cleaned, files written to 2_ssf/g1"
 fi
 echo "cleaning raw ma $f, adding c-bp from $g2"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname2 ]]; then 
- Rscript 2_clean.R $f $g2 $ssfname2
+ Rscript clean.R $f $g2 $ssfname2
  echo "cleaned, files written to 2_ssf/g2"
 fi
 
@@ -168,6 +168,4 @@ if [[ "$testing" = false ]] && (( $nscore == 0 )); then
    plink --bfile $g2 --score $rf --out $scorename --noweb
  done
 fi
-
-
 
