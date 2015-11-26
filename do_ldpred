@@ -3,7 +3,6 @@ set -u
 # Patrick Miller
 # Do all ldpred steps 1 phenotype at a time, saving only the weights and not the intermediate results.
 # The reason we do this is because the intermediate results are much too large to save permanently, but the weights
-# are relatively small.
 # This version maps genetic files onto task ids
 
 # The script allows cleaning (removing intermediate results) as well as testing (not running commands, making sure files are ok)
@@ -22,10 +21,8 @@ set -u
 module load python/2.7.8
 
 mname=$1
-echo "running ldpred for $1"
 loc=../3_subsets
-# This is so gfiles is 1-indexed, to map onto SGE_TASK_ID
-gfiles=("" $(awk -F, 'NR > 1 {print $1}' config))
+gfiles=("" $(find $loc/1_genetic -type f -printf '%f\n' | sed 's/\..*//' | sort | uniq) )
 echo "read the following genetic files: ${gfiles[@]}"
 ld_pref=$mname
 ld_rad=("" 300 800)
@@ -34,8 +31,8 @@ testing=false
 # remove intermediate results?
 clean=false
 # Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
-arg2=${2:-1}
-i=${SGE_TASK_ID:=$arg2}
+gid=${2:-1}
+i=${SGE_TASK_ID:=$gid}
 gf=$loc/1_genetic/${gfiles[$i]}
 ld_rad1=${ld_rad[$i]}
 ns=ns.txt
@@ -63,7 +60,7 @@ else
 fi
 echo ""
 
-n=$(grep ^$mname $ns | awk '{print $2}' )
+n=$(egrep "(^| )$mname( |$)" $ns | awk '{print $2}' )
 
 ## 3. Coordinate
 
@@ -89,7 +86,7 @@ fi
 
 nweights=$( ls $loc/4_pred/g$i/$mname/ | wc -l )
 
-echo "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/$gf/$ld_pref"
+echo "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref"
 if [[ "$testing" = false ]] && (( $nweights == 0 )); then 
  python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref
  echo "results written to $lname1"
