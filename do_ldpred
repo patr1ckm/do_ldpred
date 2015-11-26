@@ -112,7 +112,7 @@ if [[ "$testing" = false ]] && [[ $clean = true ]] ; then
   rm $cname2
 fi
 
-module load plink
+which plink2
 
 ## 5. Compute scores
 echo " computing polygenic scores from ldpred weights"
@@ -138,8 +138,9 @@ if [[ "$testing" = false ]] && (( $nscore == 0 )); then
  for rf in $rfiles
  do
    scorename=${rf/4_pred/5_scores}
-   echo "plink --bfile $g1 --score $rf --out $scorename --noweb"
-   plink --bfile $g1 --score $rf --out $scorename --noweb
+   scorename=${scorename%.raw}
+   echo "plink2 --bfile $g1 --score $rf --out $scorename --noweb"
+   plink2 --bfile $g1 --score $rf --out $scorename --noweb
  done
 fi
 
@@ -164,8 +165,9 @@ if [[ "$testing" = false ]] && (( $nscore == 0 )); then
  for rf in $rfiles
  do
    scorename=${rf/4_pred/5_scores}
-   echo "plink --bfile $g2 --score $rf --out $scorename --noweb"
-   plink --bfile $g2 --score $rf --out $scorename --noweb
+   scorename=${scorename%.raw}
+   echo "plink2 --bfile $g2 --score $rf --out $scorename --noweb"
+   plink2 --bfile $g2 --score $rf --out $scorename --noweb
  done
 fi
 
