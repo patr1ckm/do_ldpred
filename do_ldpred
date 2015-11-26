@@ -28,12 +28,11 @@ loc=../3_subsets
 gfiles=("" $(awk -F, 'NR > 1 {print $1}' config))
 echo "read the following genetic files: ${gfiles[@]}"
 ld_pref=$mname
-ld_rad=(300 800)
+ld_rad=("" 300 800)
 # if testing=true, commands are printed but not executed. Useful for checking filenames.
 testing=false
 # remove intermediate results?
 clean=false
-
 # Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
 arg2=${2:-1}
 i=${SGE_TASK_ID:=$arg2}
@@ -42,6 +41,8 @@ ld_rad1=${ld_rad[$i]}
 
 echo "cleaning = $clean, testing = $testing"
 echo "running script using $gf"
+python test.py
+echo ""
 
 ## 2. Clean data, add c-bp
 f=$loc/0_ma/dropntr/"$mname".tbl
@@ -51,12 +52,14 @@ echo "cleaning raw ma $f, adding c-bp from  $gf"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then 
   Rscript clean.R $f $ $ssfname1
   echo "cleaned, files written to 2_ssf/g$i"
+else
+  echo "   cleaned ma files already found"
 fi
+echo ""
 
 n=$(grep ^$mname ns.txt | awk '{print $2}' )
 
 ## 3. Coordinate
-python test.py
 
 
 cname1=$(echo "$loc/3_coord/g$i/$mname.coord")
@@ -65,10 +68,13 @@ echo "coordinating genotypes with --gf=$gf, --ssf=$ssfname1, --N=$n, --out=$cnam
 if [[ "$testing" = false ]] && [[ ! -f $cname1 ]]; then 
   python ~/bin/ldpred/coord_genotypes.py --gf=$gf --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD 
   echo "results written to $cname1"
+else 
+  echo "   coordination file found"
 fi
-
+echo ""
 ## 4. LDpred
 
+echo "running LDpred "
 lname1=$(echo "$loc/4_pred/g$i/$mname/$mname")
 
 if mkdir $loc/4_pred/g$i/$mname; then
@@ -81,15 +87,18 @@ echo "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n 
 if [[ "$testing" = false ]] && (( $nweights == 0 )); then 
  python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref
  echo "results written to $lname1"
+else 
+  echo "   ldpred weights found"
 fi
 
 if [[ "$testing" = false ]] && [[ $clean = true ]]; then 
   echo " rm $cname1"
   rm $cname1
 fi
+echo ""
 
 ## 5. Compute scores
-echo " computing polygenic scores from ldpred weights"
+echo "computing polygenic scores from ldpred weights"
 
 
 nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
@@ -105,6 +114,8 @@ if [[ "$testing" = false ]] && (( $nraw == 0 )); then
    awk '{print $3 "\t" $4 "\t" $6}' $wf > $rawname.raw
  done
  awk '{print $3 "\t" $4 "\t" $5}' $mname_LDpred-inf.txt > $mname_LE.txt
+else 
+ echo "   .raw files found"
 fi
 
 if [[ "$testing" = false ]] && (( $nscore == 0 )); then
@@ -117,6 +128,9 @@ if [[ "$testing" = false ]] && (( $nscore == 0 )); then
    echo "plink2 --bfile $gf --score $rf --out $scorename "
    plink2 --bfile $gf --score $rf --out $scorename 
  done
+else 
+ echo "   polygenic scores found"
 fi
 
+echo ""
 
