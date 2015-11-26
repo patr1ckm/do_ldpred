@@ -1,7 +1,9 @@
 # do\_ldpred
 
-The primary purpose of do\_ldpred is to provide an ldpred workflow in a cluster environment (e.g. SGE) that enables distributed computation of ldpred weights for sets of phenotypes 
-while minimizing memory footprint and recomputation. 
+LDpred computes polygenic scores by updating allele weights correcting for LD and using a Bayesian point-normal mixture prior for the 
+expected effect sizes.
+
+The primary purpose of do\_ldpred is to provide an ldpred workflow in a cluster environment (e.g. SGE) that enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation. 
 
 Installation: just copy the scripts, setting the appropriate variables in do\_ldpred (please check!).
 
@@ -10,13 +12,24 @@ Requires all of the LDPred requirements (e.g. hdf5, plinkio, etc).
 Expects a directory structure like the following:
 
 - 0\_ma contains raw summary statistics files for phenotypes. 
-- 1\_plink contains genetic data in plink binary format (bed/bim/fam). LDpred will be run on each of these files in separate SGE jobs (mapped to $SGE\_TASK\_ID)
+- 1\_plink contains genetic data in plink binary format (bed/bim/fam). 
 
 ## Workflow
 
 Invocation
 
-    do\_ldpred phenoname
+    qsub do_ldpred phenoname
+
+This will submit a job running the LDpred workflow on each of the files 1\_plink as a separate SGE job (mapped to $SGE\_TASK\_ID). The following steps are performed:
+
+### 0. Setup
+
+Will create the following folders to store intermediate results of the steps.
+
+    2_ssf/
+    3_coord/
+    4_pred/
+    5_scores/
 
 ### 1. Cleaning
 
@@ -45,7 +58,7 @@ and can be referenced by setting the ld\_pref variable in do\_ldpred. The defaul
 
 ### 4. Scores
 
-Computes polygenic scores for the ldpred weights (and original weights) using plink (\*.raw) to 5\_scores.
+Computes polygenic scores for the ldpred weights (and original weights) using plink2 (that is, Plink 1.9 mapped to the command 'plink2')  to 5\_scores. 
 
 Of course, use at your own risk, as it stands you will probably need to modify heavily. It is currently under active development.
 
