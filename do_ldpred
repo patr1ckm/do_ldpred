@@ -3,7 +3,7 @@ set -u
 # Patrick Miller
 # Do all ldpred steps 1 phenotype at a time, saving only the weights and not the intermediate results.
 # The reason we do this is because the intermediate results are much too large to save permanently, but the weights
-# This version maps genetic files onto task ids
+# This version maps plink files onto task ids
 
 # The script allows cleaning (removing intermediate results) as well as testing (not running commands, making sure files are ok)
 # by setting the testing and clean flags respectively. Eventually these will be arguments.
@@ -22,8 +22,8 @@ module load python/2.7.8
 
 mname=$1
 loc=../3_subsets
-gfiles=("" $(find $loc/1_genetic -type f -printf '%f\n' | sed 's/\..*//' | sort | uniq) )
-echo "read the following genetic files: ${gfiles[@]}"
+gfiles=("" $(find $loc/1_plink -type f -printf '%f\n' | sed 's/\..*//' | sort | uniq) )
+echo "read the following plink files: ${gfiles[@]}"
 ld_pref=$mname
 ld_rad=("" 300 800)
 # if testing=true, commands are printed but not executed. Useful for checking filenames.
@@ -33,7 +33,7 @@ clean=false
 # Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
 gid=${2:-1}
 i=${SGE_TASK_ID:=$gid}
-gf=$loc/1_genetic/${gfiles[$i]}
+gf=$loc/1_plink/${gfiles[$i]}
 ld_rad1=${ld_rad[$i]}
 ns=ns.txt
 

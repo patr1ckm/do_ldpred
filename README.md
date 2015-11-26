@@ -1,37 +1,53 @@
 # do\_ldpred
 
 The primary purpose of do\_ldpred is to provide an ldpred workflow in a cluster environment (e.g. SGE) that enables distributed computation of ldpred weights for sets of phenotypes 
-while minimizing memory footprint and recomputation.
+while minimizing memory footprint and recomputation. 
 
-Installation: just copy the scripts and use them.
+Installation: just copy the scripts, setting the appropriate variables in do\_ldpred (please check!).
+
 Requires all of the LDPred requirements (e.g. hdf5, plinkio, etc).
 
 Expects a directory structure like the following:
 
- - ├── 0_ma
- - ├── 1_genetic
- - ├── 2_ssf
- - ├── 3_coord
- - ├── 4_pred
- - ├── 5_scores
+- 0\_ma contains raw summary statistics files for phenotypes. 
+- 1\_plink contains genetic data in plink binary format (bed/bim/fam). LDpred will be run on each of these files in separate SGE jobs (mapped to $SGE\_TASK\_ID)
 
-Where 0_ma contains the meta-analysis results/summary statistics, 1\_genetic contains plink files (bed/bim/fam) (up to 2 right now). Currently, files in 2 or 3 can be large, 
-and are managed by do\_ldpred. do\_ldpred does not recompute files that already exist in these directories.
+## Workflow
 
-The work flow steps are as follows:
+Invocation
 
-  1. 2\_clean.R preps MA files 0\_ma/dropntr for ldpred, putting in 2\_ssf. This involves adding C-BP to the RSnumbers based on plink.bim files in 1\_genetic.
-     Since the number of snps is different for the two genetic files (imputed, not imputed), we perform ldpred on each separately storing results in folders /g1, /g2
-  2. Coordinates 2\_ssf/ files with genetic data in 1\_genetic/. These files are generally quite large even when compressed (e.g. 2-4GB for 1 or 2.5M SNPs)
-     so its best to remove them if ldpred worked.
-  3. Runs ldpred on 3\_coord/ dropping weights in 4\_pred/. It takes a long time to calculate LD, so the \*.pickled.gz LD file for 1 phenotype is stored in 4\_pred/g1 4\_pred/g2 etc
-  4. Computes polygenic scores for the ldpred weights (and original) using plink, assigns to 5\_scores
+    do\_ldpred phenoname
+
+### 1. Cleaning
+
+do\_ldpred can incorporate cleaning the raw MA files for LDpred into the workflow. A sample file (clean.R) is included here for demonstration.
+It adds C-BP positions for RS numbers in the MA files from the plink genetic files, and puts them in standard format.
+The user will likely need to do their own cleaning (sorry...). The results should be placed in 2\_ssf, in the format phenoname.ssf.
+
+### 2. ldcoord
+
+Runs ldcoord on phenoname.ssf on each plink data set in 1\_plink. The ldcoord parameter '--N' can be either set in the script, or 
+read from a file ns.txt, as follows:
+
+    phenoname n
+    pheno1    10000
+    pheno2    15033
+
+The results are placed in 3\_coord, and are in the format phenoname.coord. 
+
+If the variable clean=true, the .coord files are deleted after a successful run of ldpred. They are usually large, so this should be considered.
+
+### 3. ldpred
+
+Runs ldpred on pheno.coord, with the given sample size. The ld radius, and ld prefix arguments can be set in the bash script.
+The weights are placed in 4\_pred. Since it takes a long time to calculate LD, the \*.pickled.gz LD files for the phenotypes are stored in 4\_pred/g\* 
+and can be referenced by setting the ld\_pref variable in do\_ldpred. The default ldpred values are used for causal fraction.
+
+### 4. Scores
+
+Computes polygenic scores for the ldpred weights (and original weights) using plink (\*.raw) to 5\_scores.
 
 Of course, use at your own risk, as it stands you will probably need to modify heavily. It is currently under active development.
 
-To do:
 
- 1. Use command arguments
- 2. Loop through genetic files
- 3. Script the file setup
 
