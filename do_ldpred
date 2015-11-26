@@ -38,10 +38,16 @@ arg2=${2:-1}
 i=${SGE_TASK_ID:=$arg2}
 gf=$loc/1_genetic/${gfiles[$i]}
 ld_rad1=${ld_rad[$i]}
+ns=ns.txt
 
 echo "cleaning = $clean, testing = $testing"
 echo "running script using $gf"
 python test.py
+echo ""
+
+if mkdir $loc/2_ssf $loc/3_coord $loc/4_pred $loc/5_scores; then
+  echo " mkdir $loc/2_ssf $loc/3_coord $loc/4_pred $loc/5_scores"
+fi
 echo ""
 
 ## 2. Clean data, add c-bp
@@ -57,7 +63,7 @@ else
 fi
 echo ""
 
-n=$(grep ^$mname ns.txt | awk '{print $2}' )
+n=$(grep ^$mname $ns | awk '{print $2}' )
 
 ## 3. Coordinate
 
