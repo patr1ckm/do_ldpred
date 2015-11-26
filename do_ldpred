@@ -137,7 +137,7 @@ if [[ "$testing" = false ]] && (( $nscore == 0 )); then
  rfiles=$(echo $loc/4_pred/g1/$mname/*.raw)
  for rf in $rfiles
  do
-   scorename=${rf/4_pred/5_score}
+   scorename=${rf/4_pred/5_scores}
    echo "plink --bfile $g1 --score $rf --out $scorename --noweb"
    plink --bfile $g1 --score $rf --out $scorename --noweb
  done
@@ -163,7 +163,7 @@ if [[ "$testing" = false ]] && (( $nscore == 0 )); then
  rfiles=$(echo $loc/4_pred/g2/$mname/*.raw)
  for rf in $rfiles
  do
-   scorename=${rf/4_pred/5_score}
+   scorename=${rf/4_pred/5_scores}
    echo "plink --bfile $g2 --score $rf --out $scorename --noweb"
    plink --bfile $g2 --score $rf --out $scorename --noweb
  done
