@@ -31,7 +31,7 @@ ld_rad=("" 300 800)
 # if testing=true, commands are printed but not executed. Useful for checking filenames.
 testing=false
 # remove .coord files after ldpred completes?
-clean=false
+clean=true
 # compute polygenic scores?
 scores=false
 
@@ -45,10 +45,16 @@ gftmp=$gf.$mname.$i
 mkdir -p logs $loc/2_ssf $loc/3_coord $loc/4_pred $loc/5_scores
 logfile=logs/$mname.$i.log
 logcho() { echo "$@" 1>> $logfile; echo "$@";}
+logcho ""
+logcho "running do_ldpred on $mname"
+logcho ""
+logcho ""
 logcho "read the following plink files: ${gfiles[@]}"
 logcho "cleaning = $clean, testing = $testing"
 logcho "running script using $gf"
 logcho "will coordinate with temporary $gftmp to prevent collisions"
+logcho "job $JOB_ID"
+echo $mname $JOB_ID >> jids.txt
 #python test.py
 logcho ""
 
@@ -58,7 +64,7 @@ ssfname1=$(echo "$loc/2_ssf/g$i/"$mname".ssf")
 
 logcho "cleaning raw ma $f, adding c-bp from  $gf"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then 
-  Rscript clean.R $f $ssfname1
+  Rscript clean.R $f $gf $ssfname1 >> $logfile 2>&1
   logcho "cleaned, files written to 2_ssf/g$i"
 else
   logcho "   cleaned ma files already found"
@@ -119,7 +125,7 @@ if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nraw == 0 )); then
    logcho "writing $wf > $rawname.raw"
    awk '{print $3 "\t" $4 "\t" $6}' $wf > $rawname.raw
  done
- awk '{print $3 "\t" $4 "\t" $5}' $mname_LDpred-inf.txt > $mname_LE.txt
+ awk '{print $3 "\t" $4 "\t" $5}' "$mname"_LDpred-inf.txt > "$mname"_weights_unchanged.raw
 else 
  logcho "   .raw files found"
 fi
