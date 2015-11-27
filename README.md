@@ -4,12 +4,11 @@ Polygenic scores are linear combinations of SNPs  with weights given by a GWAS o
 [LDpred](http://biorxiv.org/content/early/2015/03/04/015859) computes updated weights for polygenic scores correcting for linkage disequilibrium (LD)
  and using a Bayesian point-normal mixture prior for the expected effect sizes. 
 
-do\_ldpred is a BASH script providing an LDpred workflow for many phenotypes. It is designed to work in a cluster environment (in particular SGE) to enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation. 
+do\_ldpred is a BASH script providing an LDpred workflow for many phenotypes. It is designed to work in a cluster environment (in particular SGE) to enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation, and allows continuous monitoring of progress. 
 
 Installation: Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just download/clone/copy the scripts for do\_ldpred.
 
     git clone git@github.com:patr1ckm/do_ldpred.git 
-
 
 Expects a directory structure like the following:
 
@@ -34,6 +33,7 @@ Will create the following folders to store intermediate results of the steps.
     3_coord/  contains *.coord
     4_pred/  contains weights (*.txt, *.raw)
     5_scores/  
+    logs/  contains log files to monitor progress
 
 The relative location of the files can be specified in the script by setting the `loc` variable.
 
@@ -60,11 +60,13 @@ If the variable clean=true, the .coord files are deleted after a successful run 
 
 Runs ldpred on pheno.coord, with the given sample size. The ld radius, and ld prefix arguments can be set in the bash script.
 The weights are placed in 4\_pred. Since it takes a long time to calculate LD, the \*.pickled.gz LD files for the phenotypes are stored in 4\_pred/g\* 
-and can be referenced by setting the ld\_pref variable in do\_ldpred. The default ldpred values are used for causal fraction.
+and can be referenced by setting the ld\_pref variable in do\_ldpred. The default LDpred values are used for causal fraction.
 
 ### 4. Scores
 
-Computes polygenic scores for the ldpred weights (and original weights) using plink2 (that is, [Plink 1.9](https://www.cog-genomics.org/plink2) mapped to the command 'plink2')  to 5\_scores. 
+If scores=true, computes polygenic scores for the ldpred weights (and original weights) using plink2 (that is, [Plink 1.9](https://www.cog-genomics.org/plink2) mapped to the command 'plink2')  to 5\_scores. 
+
+## Disclaimer
 
 Of course, use at your own risk, as it stands you will probably need to modify heavily. It is currently under active development.
 
