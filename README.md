@@ -6,7 +6,9 @@ Polygenic scores are linear combinations of SNPs  with weights given by a GWAS o
 
 do\_ldpred is a BASH script providing an LDpred workflow for many phenotypes. It is designed to work in a cluster environment (in particular SGE) to enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation, and allows continuous monitoring of progress. 
 
-Installation: Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just download/clone/copy the scripts for do\_ldpred.
+## Installation
+
+Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just download/clone/copy the scripts for do\_ldpred.
 
     git clone git@github.com:patr1ckm/do_ldpred.git 
     chmod +x do_ldpred
