@@ -4,7 +4,7 @@ Polygenic scores are linear combinations of SNPs  with weights given by a GWAS o
 [LDpred](http://biorxiv.org/content/early/2015/03/04/015859) computes updated weights for polygenic scores correcting for linkage disequilibrium (LD)
  and using a Bayesian point-normal mixture prior for the expected effect sizes. 
 
-do\_ldpred is a BASH script providing an LDpred workflow for many phenotypes. It is designed to work in a cluster environment (in particular SGE) to enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation, and allows continuous monitoring of progress. 
+`do_ldpred` is a BASH script providing an LDpred workflow for many phenotypes. It is designed to work in a cluster environment (in particular SGE) to enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation, and allows continuous monitoring of progress. 
 
 ## Installation
 
@@ -18,7 +18,7 @@ Expects a directory structure like the following:
     0\_ma contains raw summary statistics files for phenotypes (.tbl)
     1\_plink contains genetic data in plink binary format (bed/bim/fam). 
 
-The variables in do\_ldpred will likely need to be modified.
+The variables in `do_ldpred` will likely need to be modified.
 
 ## Workflow
 
@@ -26,11 +26,13 @@ Invocation
 
     qsub do_ldpred phenoname
 
-This will submit a job running the LDpred workflow on each of the files 1\_plink as a separate SGE job (mapped to $SGE\_TASK\_ID). The following steps are performed:
+This will submit a job running the LDpred workflow on each of the files `1_plink` as a separate SGE job (mapped to `$SGE_TASK_ID`). 
 
     ./do_ldpred phenoname 1
 
 Will run do\_ldpred locally on plink file 1.
+
+The following steps are performed:
 
 ### 0. Setup
 
