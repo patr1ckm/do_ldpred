@@ -82,7 +82,7 @@ Errors in any step will cause the program to terminate.
 
 ## Disclaimer
 
-Of course, use at your own risk, as it stands you will probably need to modify heavily. It is currently under active development.
+Of course, use at your own risk, as it stands you will probably need to modify heavily. Suggestions and contributions are welcome. 
 
 
 
