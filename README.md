@@ -15,10 +15,10 @@ Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just do
 
 `do_ldpred` expects the following directories: 
 
-    0\_ma contains raw summary statistics files for phenotypes (.tbl)
-    1\_plink contains genetic data in plink binary format (bed/bim/fam). 
+    0_ma contains raw summary statistics files for phenotypes (.tbl)
+    1_plink contains genetic data in plink binary format (bed/bim/fam). 
 
-The variables in `do_ldpred` will likely need to be modified.
+The variables in `do_ldpred` will likely need to be modified. The important ones are noted in the workflow below.
 
 ## Workflow
 
