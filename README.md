@@ -13,7 +13,7 @@ Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just do
     git clone git@github.com:patr1ckm/do_ldpred.git 
     chmod +x do_ldpred
 
-Expects a directory structure like the following:
+`do_ldpred` expects the following directories: 
 
     0\_ma contains raw summary statistics files for phenotypes (.tbl)
     1\_plink contains genetic data in plink binary format (bed/bim/fam). 
