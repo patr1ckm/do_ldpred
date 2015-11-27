@@ -18,7 +18,7 @@ set -e
 #$ -pe smp 10  #Specify parallel environment and legal core size
 #$ -q *@@daccss		 # Specify queue
 #$ -N ldp	         # Specify job name
-#$ -t 1        # number of chunks
+#$ -t 2        # number of chunks
 #$ -o SGE_Output/
 
 module load python/2.7.8
@@ -38,6 +38,7 @@ scores=false
 # Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
 gid=${2:-1}
 i=${SGE_TASK_ID:=$gid}
+jobid=${JOB_ID:=100}
 gf=$loc/1_plink/${gfiles[$i]}
 ld_rad1=${ld_rad[$i]}
 ns=ns.txt
@@ -53,8 +54,8 @@ logcho "read the following plink files: ${gfiles[@]}"
 logcho "cleaning = $clean, testing = $testing"
 logcho "running script using $gf"
 logcho "will coordinate with temporary $gftmp to prevent collisions"
-logcho "job $JOB_ID"
-echo $mname $JOB_ID >> jids.txt
+logcho "job $jobid"
+echo $mname $jobid >> jids.txt
 #python test.py
 logcho ""
 
@@ -72,13 +73,16 @@ fi
 logcho ""
 
 n=$(egrep "(^| )$mname( |$)" $ns | awk '{print $2}' )
+nweights=$( ls $loc/4_pred/g$i/$mname/ | wc -l )
+nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
+nscore=$(ls $loc/5_scores/g$i/$mname/ | wc -l)
 
 ## 3. Coordinate
 
 cname1=$(echo "$loc/3_coord/g$i/$mname.coord")
 
 logcho "coordinating genotypes with --gf=$gftmp, --ssf=$ssfname1, --N=$n, --out=$cname1 --ssf_format=STANDARD"
-if [[ "$testing" = false ]] && [[ ! -f $cname1 ]]; then 
+if [[ "$testing" = false ]] && [[ ! -f $cname1 ]] && (( $nweights == 0 )); then 
   cp $gf.bed $gftmp.bed
   cp $gf.bim $gftmp.bim
   cp $gf.fam $gftmp.fam
@@ -95,7 +99,6 @@ lname1=$(echo "$loc/4_pred/g$i/$mname/$mname")
 
 mkdir -p $loc/4_pred/g$i/$mname
 
-nweights=$( ls $loc/4_pred/g$i/$mname/ | wc -l )
 
 logcho "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref"
 if [[ "$testing" = false ]] && (( $nweights == 0 )); then 
@@ -113,8 +116,6 @@ logcho ""
 ## 5. Compute scores
 logcho "computing polygenic scores from ldpred weights"
 
-nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
-nscore=$(ls $loc/5_scores/g$i/$mname/ | wc -l)
 
 if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nraw == 0 )); then
  logcho "computing .raw files for $loc/4_pred/g$i/$mname/"
