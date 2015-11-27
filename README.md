@@ -9,6 +9,7 @@ do\_ldpred is a BASH script providing an LDpred workflow for many phenotypes. It
 Installation: Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just download/clone/copy the scripts for do\_ldpred.
 
     git clone git@github.com:patr1ckm/do_ldpred.git 
+    chmod +x do_ldpred
 
 Expects a directory structure like the following:
 
@@ -24,6 +25,10 @@ Invocation
     qsub do_ldpred phenoname
 
 This will submit a job running the LDpred workflow on each of the files 1\_plink as a separate SGE job (mapped to $SGE\_TASK\_ID). The following steps are performed:
+
+    ./do_ldpred phenoname 1
+
+Will run do\_ldpred locally on plink file 1.
 
 ### 0. Setup
 
@@ -54,7 +59,8 @@ read from a file ns.txt, as follows:
 
 The results are placed in 3\_coord, and are in the format phenoname.coord. 
 
-If the variable clean=true, the .coord files are deleted after a successful run of ldpred. They are usually large, so this should be considered.
+If the variable clean=true, the .coord files are deleted after a _successful_ run of ldpred. They are usually large, so this should be considered when running ldpred
+for many phenotypes in parallel.
 
 ### 3. ldpred
 
@@ -65,6 +71,13 @@ and can be referenced by setting the ld\_pref variable in do\_ldpred. The defaul
 ### 4. Scores
 
 If scores=true, computes polygenic scores for the ldpred weights (and original weights) using plink2 (that is, [Plink 1.9](https://www.cog-genomics.org/plink2) mapped to the command 'plink2')  to 5\_scores. 
+
+## Monitoring Progress
+
+The log files contain the standard output and standard error from the commands that were run. They accurately capture the state of the program while it is running,
+in contrast to the SGE buffered output files which only write after completion.
+
+Errors in any step will cause the program to terminate. 
 
 ## Disclaimer
 
