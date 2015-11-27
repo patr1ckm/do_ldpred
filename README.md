@@ -77,7 +77,7 @@ If `scores=true`, computes polygenic scores for the ldpred weights (and original
 
 ## Monitoring Progress
 
-The log files contain the standard output and standard error from the commands that were run. They accurately capture the state of the program while it is running, in contrast to the SGE buffered output files which only write after completion.
+The log files contain the standard output and standard error from the commands that were run. They accurately capture the state of the program while it is running, in contrast to the SGE buffered output files which is only written after completion.
 
 Errors in any step will cause the program to terminate. 
 
