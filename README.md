@@ -15,8 +15,8 @@ Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just do
 
 `do_ldpred` expects the following directories: 
 
-    0_ma contains raw summary statistics files for phenotypes (.tbl)
-    1_plink contains genetic data in plink binary format (bed/bim/fam). 
+  - `0_ma/` contains raw summary statistics files for phenotypes. 
+  - `1_plink/` contains genetic data in plink binary format (bed/bim/fam). 
 
 The variables in `do_ldpred` will likely need to be modified. The important ones are noted in the workflow below.
 
@@ -48,8 +48,8 @@ The location of the files can be specified in the script by setting the `loc` va
 
 ### 1. Cleaning
 
-`do_ldpred` can incorporate cleaning the raw MA files for LDpred into the workflow. A sample file (`clean.R`) is included here for demonstration.
-It adds C-BP positions for RS numbers in the MA files from the plink genetic files, and reorders the columns according to `ldpred` STANDARD format.
+`do_ldpred` can incorporate cleaning the raw MA files for LDpred into the workflow. A sample file (`clean.R`) is included here for demonstration. It adds C-BP positions for RS numbers in `0_ma/` (ending in the convention `.tbl`) from the plink genetic files, and reorders the columns according to `LDpred.py` STANDARD format.
+
 The user will likely need to write a custom script for this. The results should be placed in `2_ssf`, with filenames of the format `phenoname.ssf`.
 
 ### 2. `coord_genotypes.py`
