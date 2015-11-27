@@ -1,5 +1,9 @@
 #!/bin/bash
+
+# These cause the script to fail without giving a phenotype name in $1, or if any intermediate step produces an error.
+
 set -u
+set -e
 # Patrick Miller
 # Do all ldpred steps 1 phenotype at a time, saving only the weights and not the intermediate results.
 # The reason we do this is because the intermediate results are much too large to save permanently, but the weights
@@ -14,126 +18,125 @@ set -u
 #$ -pe smp 10  #Specify parallel environment and legal core size
 #$ -q *@@daccss		 # Specify queue
 #$ -N ldp	         # Specify job name
-#$ -t 1-2        # number of chunks
+#$ -t 1        # number of chunks
 #$ -o SGE_Output/
-
 
 module load python/2.7.8
 
 mname=$1
 loc=../3_subsets
 gfiles=("" $(find $loc/1_plink -type f -printf '%f\n' | sed 's/\..*//' | sort | uniq) )
-echo "read the following plink files: ${gfiles[@]}"
 ld_pref=$mname
 ld_rad=("" 300 800)
 # if testing=true, commands are printed but not executed. Useful for checking filenames.
 testing=false
-# remove intermediate results?
+# remove .coord files after ldpred completes?
 clean=false
+# compute polygenic scores?
+scores=false
+
 # Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
 gid=${2:-1}
 i=${SGE_TASK_ID:=$gid}
 gf=$loc/1_plink/${gfiles[$i]}
 ld_rad1=${ld_rad[$i]}
 ns=ns.txt
-
-echo "cleaning = $clean, testing = $testing"
-echo "running script using $gf"
-python test.py
-echo ""
-
-if mkdir $loc/2_ssf $loc/3_coord $loc/4_pred $loc/5_scores; then
-  echo " mkdir $loc/2_ssf $loc/3_coord $loc/4_pred $loc/5_scores"
-fi
-echo ""
+gftmp=$gf.$mname.$i
+mkdir -p logs $loc/2_ssf $loc/3_coord $loc/4_pred $loc/5_scores
+logfile=logs/$mname.$i.log
+logcho() { echo "$@" 1>> $logfile; echo "$@";}
+logcho "read the following plink files: ${gfiles[@]}"
+logcho "cleaning = $clean, testing = $testing"
+logcho "running script using $gf"
+logcho "will coordinate with temporary $gftmp to prevent collisions"
+#python test.py
+logcho ""
 
 ## 2. Clean data, add c-bp
-f=$loc/0_ma/dropntr/"$mname".tbl
+f=$loc/0_ma/"$mname".tbl
 ssfname1=$(echo "$loc/2_ssf/g$i/"$mname".ssf")
 
-echo "cleaning raw ma $f, adding c-bp from  $gf"
+logcho "cleaning raw ma $f, adding c-bp from  $gf"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then 
-  Rscript clean.R $f $ $ssfname1
-  echo "cleaned, files written to 2_ssf/g$i"
+  Rscript clean.R $f $ssfname1
+  logcho "cleaned, files written to 2_ssf/g$i"
 else
-  echo "   cleaned ma files already found"
+  logcho "   cleaned ma files already found"
 fi
-echo ""
+logcho ""
 
 n=$(egrep "(^| )$mname( |$)" $ns | awk '{print $2}' )
 
 ## 3. Coordinate
 
-
 cname1=$(echo "$loc/3_coord/g$i/$mname.coord")
 
-echo "coordinating genotypes with --gf=$gf, --ssf=$ssfname1, --N=$n, --out=$cname1 --ssf_format=STANDARD"
+logcho "coordinating genotypes with --gf=$gftmp, --ssf=$ssfname1, --N=$n, --out=$cname1 --ssf_format=STANDARD"
 if [[ "$testing" = false ]] && [[ ! -f $cname1 ]]; then 
-  python ~/bin/ldpred/coord_genotypes.py --gf=$gf --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD 
-  echo "results written to $cname1"
+  cp $gf.bed $gftmp.bed
+  cp $gf.bim $gftmp.bim
+  cp $gf.fam $gftmp.fam
+  python ~/bin/ldpred/coord_genotypes.py --gf=$gftmp --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD >> $logfile 2>&1 
+  rm $gftmp.*
 else 
-  echo "   coordination file found"
+  logcho "   coordination file found"
 fi
-echo ""
+
 ## 4. LDpred
 
-echo "running LDpred "
+logcho "running LDpred "
 lname1=$(echo "$loc/4_pred/g$i/$mname/$mname")
 
-if mkdir $loc/4_pred/g$i/$mname; then
- echo "mkdir $loc/4_pred/g$i/$mname"
-fi
+mkdir -p $loc/4_pred/g$i/$mname
 
 nweights=$( ls $loc/4_pred/g$i/$mname/ | wc -l )
 
-echo "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref"
+logcho "python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref"
 if [[ "$testing" = false ]] && (( $nweights == 0 )); then 
- python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref
- echo "results written to $lname1"
+ python ~/bin/ldpred/LDpred.py --coord=$cname1 --ld_radius=$ld_rad1 --N=$n --out=$lname1 --ld_prefix=$loc/4_pred/g$i/$ld_pref >> $logfile 2>&1
 else 
-  echo "   ldpred weights found"
+  logcho "   ldpred weights found"
 fi
 
-if [[ "$testing" = false ]] && [[ $clean = true ]]; then 
-  echo " rm $cname1"
+if [[ "$testing" = false ]] && [[ $clean = true ]] ; then 
+  logcho " rm $cname1"
   rm $cname1
 fi
-echo ""
+logcho ""
 
 ## 5. Compute scores
-echo "computing polygenic scores from ldpred weights"
-
+logcho "computing polygenic scores from ldpred weights"
 
 nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
 nscore=$(ls $loc/5_scores/g$i/$mname/ | wc -l)
 
-if [[ "$testing" = false ]] && (( $nraw == 0 )); then
- echo "computing .raw files for $loc/4_pred/g$i/$mname/"
+if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nraw == 0 )); then
+ logcho "computing .raw files for $loc/4_pred/g$i/$mname/"
  wfiles=$(echo $loc/4_pred/g$i/$mname/*.txt)
  for wf in $wfiles
  do
    rawname=${wf%.txt}
-   echo "writing $wf > $rawname.raw"
+   logcho "writing $wf > $rawname.raw"
    awk '{print $3 "\t" $4 "\t" $6}' $wf > $rawname.raw
  done
  awk '{print $3 "\t" $4 "\t" $5}' $mname_LDpred-inf.txt > $mname_LE.txt
 else 
- echo "   .raw files found"
+ logcho "   .raw files found"
 fi
 
-if [[ "$testing" = false ]] && (( $nscore == 0 )); then
- echo "computing polygenic scores"
+if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nscore == 0 )) ; then
+ logcho "computing polygenic scores"
  rfiles=$(echo $loc/4_pred/g$i/$mname/*.raw)
  for rf in $rfiles
  do
-   scorename=${rf/4_pred/5_scores}
+   scorename=${rf#/4_pred/5_scores}
    scorename=${scorename%.raw}
-   echo "plink2 --bfile $gf --score $rf --out $scorename "
-   plink2 --bfile $gf --score $rf --out $scorename 
+   logcho "plink2 --bfile $gf --score $rf --out $scorename "
+   plink2 --bfile $gf --score $rf --out $scorename >> $logfile 2>&1 
  done
 else 
- echo "   polygenic scores found"
+ logcho "   polygenic scores found"
 fi
 
-echo ""
+logcho ""
 

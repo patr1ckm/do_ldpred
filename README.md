@@ -1,18 +1,22 @@
 # do\_ldpred
 
-LDpred computes polygenic scores by updating allele weights correcting for LD and using a Bayesian point-normal mixture prior for the 
-expected effect sizes.
+Polygenic scores are linear combinations of SNPs  with weights given by a GWAS or meta analysis (MA).
+[LDpred](http://biorxiv.org/content/early/2015/03/04/015859) computes updated weights for polygenic scores correcting for linkage disequilibrium (LD)
+ and using a Bayesian point-normal mixture prior for the expected effect sizes. 
 
-The primary purpose of do\_ldpred is to provide an ldpred workflow in a cluster environment (e.g. SGE) that enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation. 
+do\_ldpred is a BASH script providing an LDpred workflow for many phenotypes. It is designed to work in a cluster environment (in particular SGE) to enables distributed computation of ldpred weights for sets of phenotypes while minimizing memory footprint and recomputation. 
 
-Installation: just copy the scripts, setting the appropriate variables in do\_ldpred (please check!).
+Installation: Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just download/clone/copy the scripts for do\_ldpred.
 
-Requires all of the LDPred requirements (e.g. hdf5, plinkio, etc).
+    git clone git@github.com:patr1ckm/do_ldpred.git 
+
 
 Expects a directory structure like the following:
 
-- 0\_ma contains raw summary statistics files for phenotypes. 
-- 1\_plink contains genetic data in plink binary format (bed/bim/fam). 
+    0\_ma contains raw summary statistics files for phenotypes (.tbl)
+    1\_plink contains genetic data in plink binary format (bed/bim/fam). 
+
+The variables in do\_ldpred will likely need to be modified.
 
 ## Workflow
 
@@ -26,10 +30,12 @@ This will submit a job running the LDpred workflow on each of the files 1\_plink
 
 Will create the following folders to store intermediate results of the steps.
 
-    2_ssf/
-    3_coord/
-    4_pred/
-    5_scores/
+    2_ssf/ contains *.ssf
+    3_coord/  contains *.coord
+    4_pred/  contains weights (*.txt, *.raw)
+    5_scores/  
+
+The relative location of the files can be specified in the script by setting the `loc` variable.
 
 ### 1. Cleaning
 
@@ -58,7 +64,7 @@ and can be referenced by setting the ld\_pref variable in do\_ldpred. The defaul
 
 ### 4. Scores
 
-Computes polygenic scores for the ldpred weights (and original weights) using plink2 (that is, Plink 1.9 mapped to the command 'plink2')  to 5\_scores. 
+Computes polygenic scores for the ldpred weights (and original weights) using plink2 (that is, [Plink 1.9](https://www.cog-genomics.org/plink2) mapped to the command 'plink2')  to 5\_scores. 
 
 Of course, use at your own risk, as it stands you will probably need to modify heavily. It is currently under active development.
 
