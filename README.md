@@ -44,7 +44,7 @@ Will create the following folders to store intermediate results of the steps.
     5_scores/  
     logs/  contains log files to monitor progress
 
-The relative location of the files can be specified in the script by setting the `loc` variable.
+The location of the files can be specified in the script by setting the `loc` variable. This might be different from the place the scripts are run.
 
 ### 1. Cleaning
 
@@ -52,9 +52,9 @@ The relative location of the files can be specified in the script by setting the
 It adds C-BP positions for RS numbers in the MA files from the plink genetic files, and reorders the columns according to `ldpred` STANDARD format.
 The user will likely need to write a custom script for this. The results should be placed in `2_ssf`, with filenames of the format `phenoname.ssf`.
 
-### 2. `ldcoord`
+### 2. `coord_genotypes.py`
 
-Runs `ldcoord` on `phenoname.ssf` on each plink data set in `1_plink`. The `ldcoord parameter` '--N' can be either set in the script, or 
+Runs `coord_genotypes.py` on `phenoname.ssf` on each plink data set in `1_plink`. The parameter `--N` can be either set in `do_ldpred`, or 
 read from a file `ns.txt`, as follows:
 
     phenoname n
@@ -63,15 +63,14 @@ read from a file `ns.txt`, as follows:
 
 The results are placed in `3_coord`, and are in the format `phenoname.coord`. 
 
-If `clean=true` the `.coord` files are deleted after a _successful_ run of `ldpred`. They are usually large, so this should be considered when running ldpred
-for many phenotypes in parallel.
+If `clean=true` the `.coord` files are deleted after a _successful_ run of `ldpred`. They are usually large, so this should be considered when running ldpred for many phenotypes in parallel.
 
-### 3. `ldpred`
+### 3. `LDpred.py`
 
-Runs `ldpred` on `pheno.coord`, with the given sample size. The ld radius, and ld prefix arguments can be set in the bash script.
-The weights are placed in `4_pred`. Since it takes a long time to calculate LD, the \*.pickled.gz LD files for the phenotypes are stored in `4_pred/g\*`. The default LDpred values are used for causal fraction.
+Runs `LDpred.py` on `pheno.coord`, with the given sample size. The ld radius, and ld prefix arguments can be set in the bash script.
+The weights are placed in `4_pred`. Since it takes a very long time to calculate LD (>12hrs genomewide) the \*.pickled.gz LD files for the phenotypes are stored in `4_pred/g\*` and should not be removed. The default `LDpred.py` values are used for causal fraction.
 
-### 4. Scores
+### 4. Scores via `plink2`
 
 If `scores=true`, computes polygenic scores for the ldpred weights (and original weights) using `plink2` (that is, [Plink 1.9](https://www.cog-genomics.org/plink2) mapped to the command `plink2`)  to `5_scores` 
 
