@@ -63,7 +63,7 @@ read from a file `ns.txt`, as follows:
 
 The results are placed in `3_coord`, and are in the format `phenoname.coord`. 
 
-If the variable `clean` in `do_ldpred` `=true`, the `.coord` files are deleted after a _successful_ run of `ldpred`. They are usually large, so this should be considered when running ldpred
+If `clean=true` the `.coord` files are deleted after a _successful_ run of `ldpred`. They are usually large, so this should be considered when running ldpred
 for many phenotypes in parallel.
 
 ### 3. `ldpred`
