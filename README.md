@@ -18,7 +18,7 @@ Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just do
   - `0_ma/` contains raw summary statistics files for phenotypes. 
   - `1_plink/` contains genetic data in plink binary format (bed/bim/fam). 
 
-The variables in `do_ldpred` will likely need to be modified. The important ones are noted in the workflow below.
+The variables in `do_ldpred` will likely need to be modified. The important ones are noted in the workflow below. The script has been used extensively with LDpred v0.5.
 
 ## Workflow
 
