@@ -15,7 +15,7 @@ Install [LDPred](https://bitbucket.org/bjarni_vilhjalmsson/ldpred). Then just do
 
 `do_ldpred` expects the following directories: 
 
-  - `0_ma/` contains raw summary statistics files for phenotypes. 
+  - `0_ma/` contains raw summary statistics files for phenotypes `phenoname.tbl`
   - `1_plink/` contains genetic data in plink binary format (bed/bim/fam). 
 
 The variables in `do_ldpred` will likely need to be modified. The important ones are noted in the workflow below. The script has been used extensively with LDpred v0.5.
@@ -32,15 +32,17 @@ This will submit a job running the LDpred workflow on each of the files `1_plink
 
 Will run `do_ldpred` locally on plink file 1.
 
+Here `phenoname` is just the name of the phenotype. It can contain dashes, digits, ., etc (probably no spaces though).
+
 The following steps are performed:
 
 ### 0. Setup
 
 Will create the following folders to store intermediate results of the steps.
 
-    2_ssf/ contains *.ssf
-    3_coord/  contains *.coord
-    4_pred/  contains weights (*.txt, *.raw)
+    2_ssf/ contains phenoname.ssf
+    3_coord/  contains phenoname.coord
+    4_pred/  contains weights (phenoname.txt, phenoname.raw)
     5_scores/  
     logs/  contains log files to monitor progress
 
@@ -48,7 +50,7 @@ The location of the files can be specified in the script by setting the `loc` va
 
 ### 1. Cleaning
 
-`do_ldpred` can incorporate cleaning the raw MA files for LDpred into the workflow. A sample file (`clean.R`) is included here for demonstration. It adds C-BP positions for RS numbers in `0_ma/` (ending in the convention `.tbl`) from the plink genetic files, and reorders the columns according to `LDpred.py` STANDARD format.
+`do_ldpred` can incorporate cleaning the raw MA files for LDpred into the workflow. A sample file (`clean.R`) is included here for demonstration. It adds C-BP positions for RS numbers in `0_ma/` (ending in the convention `phenoname.tbl`) from the plink genetic files, and reorders the columns according to `LDpred.py` STANDARD format.
 
 The user will likely need to write a custom script for this. The results should be placed in `2_ssf`, with filenames of the format `phenoname.ssf`.
 
