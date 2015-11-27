@@ -49,8 +49,8 @@ The relative location of the files can be specified in the script by setting the
 ### 1. Cleaning
 
 `do_ldpred` can incorporate cleaning the raw MA files for LDpred into the workflow. A sample file (`clean.R`) is included here for demonstration.
-It adds C-BP positions for RS numbers in the MA files from the plink genetic files, and puts them in standard format.
-The user will likely need to do their own cleaning. The results should be placed in `2_ssf`, with filenames of the format `phenoname.ssf`.
+It adds C-BP positions for RS numbers in the MA files from the plink genetic files, and reorders the columns according to `ldpred` STANDARD format.
+The user will likely need to write a custom script for this. The results should be placed in `2_ssf`, with filenames of the format `phenoname.ssf`.
 
 ### 2. `ldcoord`
 
