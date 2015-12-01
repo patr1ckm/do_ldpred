@@ -63,6 +63,9 @@ logcho ""
 f=$loc/0_ma/"$mname".tbl
 ssfname1=$(echo "$loc/2_ssf/g$i/"$mname".ssf")
 
+logcho "Starting cleaning $(date)"
+logcho""
+
 logcho "cleaning raw ma $f, adding c-bp from  $gf"
 if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then 
   Rscript clean.R $f $gf $ssfname1 >> $logfile 2>&1
@@ -70,12 +73,14 @@ if [[ "$testing" = false ]] && [[ ! -f $ssfname1 ]]; then
 else
   logcho "   cleaned ma files already found"
 fi
-logcho ""
 
 n=$(egrep "(^| )$mname( |$)" $ns | awk '{print $2}' )
 nweights=$( ls $loc/4_pred/g$i/$mname/ | wc -l )
 nraw=$(ls $loc/4_pred/g$i/$mname/*.raw | wc -l)
 nscore=$(ls $loc/5_scores/g$i/$mname/ | wc -l)
+logcho""
+logcho "Completed cleaning $(date)"
+logcho""
 
 ## 3. Coordinate
 
@@ -91,7 +96,9 @@ if [[ "$testing" = false ]] && [[ ! -f $cname1 ]] && (( $nweights == 0 )); then
 else 
   logcho "   coordination file found, or not needed"
 fi
-
+logcho ""
+logcho "Completed coordination: $(date)"
+logcho""
 ## 4. LDpred
 
 logcho "running LDpred "
@@ -114,6 +121,8 @@ if [[ "$testing" = false ]] && [[ $clean = true ]] ; then
   rm -f $ldnam
 fi
 logcho ""
+logcho "Completed ldpred $(date)"
+logcho ""
 
 ## 5. Compute scores
 logcho "computing polygenic scores from ldpred weights"
@@ -133,6 +142,9 @@ else
  logcho "   .raw files found"
 fi
 
+logcho "Completed .raw $(date)"
+logcho ""
+
 if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nscore == 0 )) ; then
  logcho "computing polygenic scores"
  rfiles=$(echo $loc/4_pred/g$i/$mname/*.raw)
@@ -147,5 +159,6 @@ else
  logcho "   polygenic scores found"
 fi
 
+logcho "Completed scores: $(date)"
 logcho ""
 
