@@ -89,14 +89,14 @@ if [[ "$testing" = false ]] && [[ ! -f $cname1 ]] && (( $nweights == 0 )); then
   python ~/bin/ldpred/coord_genotypes.py --gf=$gftmp --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD >> $logfile 2>&1 
   rm $gftmp.*
 else 
-  logcho "   coordination file found"
+  logcho "   coordination file found, or not needed"
 fi
 
 ## 4. LDpred
 
 logcho "running LDpred "
 lname1=$(echo "$loc/4_pred/g$i/$mname/$mname")
-
+ldnam=$(echo "$loc/4_pred/g$i/"$ld_pref"_ldradius"$ld_rad1".pickled.gz")
 mkdir -p $loc/4_pred/g$i/$mname
 
 
@@ -108,8 +108,10 @@ else
 fi
 
 if [[ "$testing" = false ]] && [[ $clean = true ]] ; then 
-  logcho " rm $cname1"
-  rm $cname1
+  logcho " rm -f $cname1"
+  rm -f $cname1
+  logcho " rm -f $ldnam"
+  rm -f $ldnam
 fi
 logcho ""
 
