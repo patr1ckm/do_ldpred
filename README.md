@@ -22,7 +22,7 @@ The variables in `do_ldpred` will likely need to be modified. The important ones
 
 ## Workflow
 
-This will submit a job running the LDpred workflow on each of the files `1_plink` as a separate SGE job (mapped to `$SGE_TASK_ID`). 
+This will submit a job running the LDpred workflow for a phenotype named `phenoname` on each of the files `1_plink` as a separate SGE job (mapped to `$SGE_TASK_ID`). 
 
     qsub do_ldpred phenoname
 
@@ -31,7 +31,7 @@ If SGE is not available, `do_ldpred` can also be run as follows (here for plink 
     ./do_ldpred phenoname 1
 
 
-Here `phenoname` is just the name of the phenotype. It can contain dashes, digits, ., etc (probably no spaces though).
+`phenoname` is just the name of the phenotype. It can contain dashes, digits, ., etc (probably no spaces though), but should be unique.
 
 The following steps are performed:
 
