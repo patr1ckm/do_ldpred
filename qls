@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# do action on job list
+#$1 command qsub, qdel, qhold etc
+#$2 lower job id
+#$3 upper job id
+
+
+for (( i=$2; i<=$3; i++ )) ;
+ do
+ echo "do $1 on  $i"
+  $1 $i
+done

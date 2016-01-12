@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#FILES=*.tbl
+#for f in $FILES;
+#do 
+f=$1
+echo "sorting $f" 
+nmax=$(sort -nk 16 $f | tail -1 | awk '{print $16}')
+ echo $f $nmax >> ns.txt
+echo "wrote $f"
+#done;

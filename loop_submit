@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+parlim=15
+files=$(cat namestorun)
+
+for f in $files;
+ do 
+    qsub do_ldpred $f 1> job.txt
+    echo "qsub do_ldpred $f 1> job.txt"
+    jid=$(cat job.txt | tr -dc '0-9' | cut -c -6)
+    jobdep=0
+    ((jobdep=jid-parlim))
+    #qalter $jid -N $f -hold_jid $jobdep
+    qalter $jid -N $f
+ done

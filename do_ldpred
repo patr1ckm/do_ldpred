@@ -15,10 +15,10 @@ set -e
 
 #$ -M patr1ckm.crc@gmail.com	 # Email address for job notification
 #$ -m ae		 # Send mail when job begins, ends and aborts
-#$ -pe smp 10  #Specify parallel environment and legal core size
+#$ -pe smp 20  #Specify parallel environment and legal core size
 #$ -q *@@daccss		 # Specify queue
 #$ -N ldp	         # Specify job name
-#$ -t 2        # number of chunks
+#$ -t 1        # number of chunks
 #$ -o SGE_Output/
 
 module load python/2.7.8
@@ -33,7 +33,7 @@ testing=false
 # remove .coord files after ldpred completes?
 clean=true
 # compute polygenic scores?
-scores=false
+scores=true
 
 # Check if $SGE_TASK_ID is set. If not, check $2, else use 1.  
 gid=${2:-1}
@@ -88,9 +88,6 @@ cname1=$(echo "$loc/3_coord/g$i/$mname.coord")
 
 logcho "coordinating genotypes with --gf=$gftmp, --ssf=$ssfname1, --N=$n, --out=$cname1 --ssf_format=STANDARD"
 if [[ "$testing" = false ]] && [[ ! -f $cname1 ]] && (( $nweights == 0 )); then 
-  cp $gf.bed $gftmp.bed
-  cp $gf.bim $gftmp.bim
-  cp $gf.fam $gftmp.fam
   python ~/bin/ldpred/coord_genotypes.py --gf=$gftmp --ssf=$ssfname1 --N=$n --out=$cname1 --ssf_format=STANDARD >> $logfile 2>&1 
   rm $gftmp.*
 else 
@@ -126,9 +123,10 @@ logcho ""
 
 ## 5. Compute scores
 logcho "computing polygenic scores from ldpred weights"
-
+mkdir -p $loc/5_scores/g$i/$mname
 
 if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nraw == 0 )); then
+
  logcho "computing .raw files for $loc/4_pred/g$i/$mname/"
  wfiles=$(echo $loc/4_pred/g$i/$mname/*.txt)
  for wf in $wfiles
@@ -137,7 +135,8 @@ if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nraw == 0 )); then
    logcho "writing $wf > $rawname.raw"
    awk '{print $3 "\t" $4 "\t" $6}' $wf > $rawname.raw
  done
- awk '{print $3 "\t" $4 "\t" $5}' "$mname"_LDpred-inf.txt > "$mname"_weights_unchanged.raw
+ logcho "writing $loc/4_pred/g$i/$mname/"$mname"_weights_unchanged.raw"
+ awk '{print $3 "\t" $4 "\t" $5}' $loc/4_pred/g$i/$mname/"$mname"_LDpred-inf.txt > $loc/4_pred/g$i/$mname/"$mname"_weights_unchanged.raw
 else 
  logcho "   .raw files found"
 fi
@@ -146,17 +145,26 @@ logcho "Completed .raw $(date)"
 logcho ""
 
 if [[ "$scores" = true ]] && [[ "$testing" = false ]] && (( $nscore == 0 )) ; then
+    logcho "creating temporary genetic files"
+    cp -n $gf.bed $gftmp.bed
+    cp -n $gf.bim $gftmp.bim
+    cp -n $gf.fam $gftmp.fam
+
  logcho "computing polygenic scores"
  rfiles=$(echo $loc/4_pred/g$i/$mname/*.raw)
  for rf in $rfiles
  do
-   scorename=${rf#/4_pred/5_scores}
+   scorename=${rf/4_pred/5_scores}
    scorename=${scorename%.raw}
-   logcho "plink2 --bfile $gf --score $rf --out $scorename "
-   plink2 --bfile $gf --score $rf --out $scorename >> $logfile 2>&1 
+   logcho "plink2 --bfile $gftmp --score $rf --out $scorename "
+   plink2 --bfile $gftmp --score $rf --out $scorename >> $logfile 2>&1 
  done
+ if [[ "$testing" = false ]] && [[ $clean = true ]] ; then 
+     logcho " rm -f $gtmp.*"
+     rm $gftmp.*
+ fi
 else 
- logcho "   polygenic scores found"
+ logcho "   polygenic scores already found, or not requested"
 fi
 
 logcho "Completed scores: $(date)"
